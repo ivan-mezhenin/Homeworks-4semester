@@ -39,3 +39,47 @@ let rec substitute variableToReplace expressionToInsert targetExpression =
                     Abs (x, substInner (BV) body)
     substInner Set.empty targetExpression
 
+let rec isNormalForm = function
+    | Var _ -> true
+    | Abs (_, body) -> isNormalForm body
+    | App (Abs _, _) -> false
+    | App (e1, e2) -> isNormalForm e1 && isNormalForm e2
+
+let rec findRedex = function
+    | App (Abs (x, body), arg) -> Some (x, body, arg)
+    | App (e1, e2) ->
+        match findRedex e1 with
+        | Some redex -> Some redex
+        | None -> findRedex e2
+    | Abs (_, body) -> findRedex body
+    | Var _ -> None
+
+let fst3 (x, _, _) = x
+let snd3 (_, y, _) = y
+let trd3 (_, _, z) = z
+
+let rec reduceOneStep = function
+    | App (Abs (x, body), arg) ->
+        substitute x arg body
+    | App (e1, e2) ->
+        match findRedex e1 with
+        | Some redex -> 
+            App (reduceOneStep (App (Abs (fst3 redex, snd3 redex), trd3 redex)), e2)
+        | None ->
+            App (e1, reduceOneStep e2)
+    | Abs (x, body) ->
+        match findRedex body with
+        | Some redex -> Abs (x, reduceOneStep (App (Abs (fst3 redex, snd3 redex), trd3 redex)))
+        | None -> Abs (x, body)
+    | Var _ as expr -> expr
+
+let rec normalize expr =
+    if isNormalForm expr then 
+        expr
+    else 
+        normalize (reduceOneStep expr)
+
+let rec toString = function
+    | Var x -> x
+    | App (e1, e2) -> sprintf "(%s %s)" (toString e1) (toString e2)
+    | Abs (x, e) -> sprintf "(λ%s.%s)" x (toString e)
