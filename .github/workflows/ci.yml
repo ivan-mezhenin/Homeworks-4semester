@@ -1,0 +1,56 @@
+name: Build and Test
+on: [push, pull_request]
+
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          9.x
+          10.x
+        
+    - name: Build
+      run: |
+        for f in $(find . -name "*.sln" -o -name "*.slnx"); do
+          if [[ "$f" != *"CalculatorOnForms2"* ]]; then
+            dotnet build "$f"
+          fi
+        done
+
+    - name: Run tests
+      run: |
+        for f in $(find . -name "*.sln" -o -name "*.slnx"); do
+          if [[ "$f" != *"CalculatorOnForms2"* ]]; then
+            dotnet test "$f"
+          fi
+        done
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          9.x
+          10.x
+
+    - name: Build and Test
+      shell: pwsh
+      run: |
+        $solutionFiles = @(Get-ChildItem -Recurse -Filter *.sln -File)
+        $solutionXFiles = @(Get-ChildItem -Recurse -Filter *.slnx -File)
+        $allFiles = $solutionFiles + $solutionXFiles
+        
+        foreach ($file in $allFiles) {
+          if ($file.FullName -notmatch "CalculatorOnForms2") {
+            Write-Host "Processing: $($file.FullName)"
+            dotnet build $file.FullName
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            dotnet test $file.FullName --no-build
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+        }
