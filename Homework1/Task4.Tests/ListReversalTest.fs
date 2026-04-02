@@ -2,7 +2,7 @@
 
 open NUnit.Framework
 open FsUnit
-open ListReversal  // предполагаем, что ваша функция в модуле ListReversal
+open ListReversal
 
 [<Test>]
 let ``Reverses a list with multiple elements`` () =
