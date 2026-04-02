@@ -1,4 +1,9 @@
 ﻿module ListReversal
 
+let reverse lst =
+    let rec loop remaining acc =
+        match remaining with
+        | [] -> acc
+        | head :: tail -> loop tail (head :: acc)
 
-let reverse lst = List.fold (fun acc x -> x :: acc) [] lst
+    loop lst []
