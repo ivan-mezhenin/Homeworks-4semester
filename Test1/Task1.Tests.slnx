@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Task1.Tests/Task1.Tests.fsproj" />
+  <Project Path="Task1/Task1.fsproj" />
+</Solution>
