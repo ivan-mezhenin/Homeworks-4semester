@@ -1,0 +1,21 @@
+\documentclass{article}
+\usepackage[russian]{babel}
+\begin{document}
+\[
+((\lambda a.(\lambda b.b\,b)(\lambda b.b\,b))\,b)\,((\lambda c.(c\,b))(\lambda a.a))
+\]
+\[
+\to_\beta ((\lambda a.(\lambda b.b\,b)(\lambda b.b\,b))\,b)\,((\lambda a.a)\,b)
+\]
+\[
+\to_\beta ((\lambda a.(\lambda b.b\,b)(\lambda b.b\,b))\,b)\,b
+\]
+\[
+\to_\beta (\lambda b.b\,b)(\lambda b.b\,b)\,b
+\]
+\[
+\to_\beta (\lambda b.b\,b)(\lambda b.b\,b)\,b
+\]
+
+Терм не имеет нормальной формы.
+\end{document}
