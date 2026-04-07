@@ -1,6 +1,6 @@
 ﻿module Fibonacci
 
-let fibonacciNumber n =
+let fibonacciNumber n : int option =
     let rec fib prev curr step =
         match step with
         | 0 -> prev
