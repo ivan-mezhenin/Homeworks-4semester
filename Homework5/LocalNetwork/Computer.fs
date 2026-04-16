@@ -2,6 +2,9 @@ namespace NetworkSimulation
 
 open System
 
+type IRandom =
+    abstract member NextDouble : unit -> float
+
 type OS =
     | Windows
     | Linux
@@ -19,15 +22,15 @@ type Computer(id: int, os: OS) =
     member val IsInfected = false with get, set
     member val Neighbors: int list = [] with get, set 
 
-    member val private RandomOverride: float option = None with get, set
+    member val private RandomProvider: IRandom = 
+        { new IRandom with member _.NextDouble() = Random.Shared.NextDouble() } 
+        with get, set
 
-    member this.SetInfectionProbabilityForTest p =
-        this.RandomOverride <- Some p
+    member this.SetRandomProvider (provider: IRandom) =
+        this.RandomProvider <- provider
 
-    member this.ShouldBeInfected() =
-        match this.RandomOverride with
-        | Some p -> p
-        | None   -> this.OS.InfectionProbability
+    member this.ShouldBeInfected() : float =
+        this.RandomProvider.NextDouble()
 
     member this.Infect() =
         this.IsInfected <- true
