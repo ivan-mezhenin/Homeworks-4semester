@@ -1,63 +1,108 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+﻿module WebCrawler
 
-var startUrl = args.Length > 0 ? args[0] : "https://example.com";
+open System
+open System.Net.Http
+open System.Text.RegularExpressions
+open System.Collections.Concurrent
+open System.Threading.Tasks
 
-await CrawlAndPrintAsync(startUrl);
+module Crawler =
 
-static async Task CrawlAndPrintAsync(string startUrl)
-{
-    var visited = new ConcurrentDictionary<string, bool>();
-    var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+    type PageResult = {
+        Url: string
+        Size: int
+    }
 
-    var linkRegex = new Regex(
-        @"<a\s+[^>]*?href\s*=\s*[""']([^""']+)[""']",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    let rec private processPagePrintAsync 
+        (url: string)
+        (visited: ConcurrentDictionary<string, bool>)
+        (httpClient: HttpClient)
+        (linkRegex: Regex) : Task =
 
-    await ProcessPageAsync(startUrl, visited, httpClient, linkRegex);
-}
+        task {
+            if not (visited.TryAdd(url, true)) then return ()
 
-static async Task ProcessPageAsync(string url, ConcurrentDictionary<string, bool> visited, HttpClient httpClient, Regex linkRegex)
-{
-    if (!visited.TryAdd(url, true))
-        return;
+            try
+                let! html = httpClient.GetStringAsync(url)
+                Console.WriteLine($"{url} — {html.Length} символов")
 
-    try
-    {
-        string html = await httpClient.GetStringAsync(url);
-        Console.WriteLine($"{url} — {html.Length} символов");
+                let matches = linkRegex.Matches(html)
+                let tasks = ResizeArray<Task>()
 
-        var matches = linkRegex.Matches(html);
+                for m in matches do
+                    let link = m.Groups[1].Value.Trim()
 
-        var tasks = new List<Task>();
+                    let mutable resolvedUri = null : Uri
+                    let absoluteUrl =
+                        if Uri.TryCreate(Uri(url), link, &resolvedUri) then
+                            resolvedUri.AbsoluteUri
+                        else
+                            Uri(Uri(url), link).AbsoluteUri
 
-        foreach (Match match in matches)
-        {
-            string link = match.Groups[1].Value.Trim();
+                    if absoluteUrl.StartsWith("http://") || absoluteUrl.StartsWith("https://") then
+                        tasks.Add(processPagePrintAsync absoluteUrl visited httpClient linkRegex)
 
-            if (!Uri.TryCreate(link, UriKind.Absolute, out Uri? absoluteUri))
-            {
-                if (Uri.TryCreate(new Uri(url), link, out absoluteUri))
-                    link = absoluteUri.AbsoluteUri;
-                else
-                    continue;
-            }
+                if tasks.Count > 0 then
+                    do! Task.WhenAll(tasks)
 
-            if (absoluteUri.Scheme is not ("http" or "https"))
-                continue;
-
-            tasks.Add(ProcessPageAsync(link, visited, httpClient, linkRegex));
+            with _ -> ()
         }
 
-        if (tasks.Count > 0)
-            await Task.WhenAll(tasks);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"{url} — ошибка: {ex.Message}");
-    }
-}
+    let rec private processPageWithResultsAsync 
+        (url: string)
+        (visited: ConcurrentDictionary<string, bool>)
+        (httpClient: HttpClient)
+        (linkRegex: Regex)
+        (results: ResizeArray<PageResult>) : Task =
+
+        task {
+            if not (visited.TryAdd(url, true)) then return ()
+
+            try
+                let! html = httpClient.GetStringAsync(url)
+                results.Add { Url = url; Size = html.Length }
+
+                let matches = linkRegex.Matches(html)
+                let tasks = ResizeArray<Task>()
+
+                for m in matches do
+                    let link = m.Groups[1].Value.Trim()
+
+                    let mutable resolvedUri = null : Uri
+                    let absoluteUrl =
+                        if Uri.TryCreate(Uri(url), link, &resolvedUri) then
+                            resolvedUri.AbsoluteUri
+                        else
+                            Uri(Uri(url), link).AbsoluteUri
+
+                    if absoluteUrl.StartsWith("http://") || absoluteUrl.StartsWith("https://") then
+                        tasks.Add(processPageWithResultsAsync absoluteUrl visited httpClient linkRegex results)
+
+                if tasks.Count > 0 then
+                    do! Task.WhenAll(tasks)
+
+            with _ -> ()
+        }
+
+    let crawlAndPrintAsync (startUrl: string) : Task =
+        task {
+            let visited = ConcurrentDictionary<string, bool>()
+            use httpClient = new HttpClient(Timeout = TimeSpan.FromSeconds(30.0))
+
+            let linkRegex = Regex(@"<a\s+[^>]*href\s*=\s*[""']([^""']+)[""']", RegexOptions.IgnoreCase ||| RegexOptions.Compiled)
+
+            do! processPagePrintAsync startUrl visited httpClient linkRegex
+        }
+
+    let crawlAsync (startUrl: string) (httpClient: HttpClient) : Task<PageResult list> =
+        task {
+            let visited = ConcurrentDictionary<string, bool>()
+
+            let linkRegex = Regex(@"<a\s+[^>]*href\s*=\s*[""']([^""']+)[""']", RegexOptions.IgnoreCase ||| RegexOptions.Compiled)
+
+            let results = ResizeArray<PageResult>()
+
+            do! processPageWithResultsAsync startUrl visited httpClient linkRegex results
+
+            return results |> Seq.toList
+        }
