@@ -1,7 +1,7 @@
-﻿open PhoneBook.Core
+﻿open PhoneDirectory.Core
 open System
 
-let rec readLine prompt =
+let rec readLine (prompt : string) =
     Console.Write prompt
     let input = Console.ReadLine().Trim()
     if String.IsNullOrWhiteSpace input then
@@ -9,7 +9,7 @@ let rec readLine prompt =
         readLine prompt
     else input
 
-let rec readCommand () : Command option =
+let rec readCommand () : Command =
     printfn "\nКоманды:"
     printfn "  add     — добавить контакт"
     printfn "  find    — найти телефон по имени"
@@ -21,46 +21,37 @@ let rec readCommand () : Command option =
     printfn ""
 
     match readLine "> " |> _.ToLower() with
-    | "exit" | "q" | "quit" -> None
-
+    | "exit" | "q" | "quit" -> Exit
     | "add" ->
         let name = readLine "Имя: "
         let phone = readLine "Телефон: "
-        Some (Add (name, phone))
-
+        Add (name, phone)
     | "find" ->
         let name = readLine "Имя для поиска: "
-        Some (FindPhone name)
-
+        FindPhone name
     | "who" ->
         let phone = readLine "Телефон для поиска: "
-        Some (FindName phone)
-
-    | "list" ->
-        Some ListAll
-
+        FindName phone
+    | "list" -> ListAll
     | "save" ->
-        let path = readLine "Путь к файлу для сохранения: "
-        Some (Save path)
-
+        let path = readLine "Путь к файлу: "
+        Save path
     | "load" ->
-        let path = readLine "Путь к файлу для загрузки: "
-        Some (Load path)
-
+        let path = readLine "Путь к файлу: "
+        Load path
     | _ ->
         printfn "Неизвестная команда"
         readCommand ()
 
-[<EntryPoint>]
-let main _ =
-    let rec loop state =
-        let newState, messages = update (readCommand () |> Option.defaultValue Exit) state
+let rec loop state =
+    let newState, messages = update (readCommand ()) state
 
-        messages |> List.iter (printfn "%s")
-        newState.LastMessage |> Option.iter (printfn "%s")
+    messages |> List.iter (printfn "%s")
+    newState.LastMessage |> Option.iter (printfn "%s")
 
-        match newState.LastMessage with
-        | Some m when m.Contains("До свидания") -> 0
-        | _ -> loop newState
+    match newState.LastMessage with
+    | Some m when m.Contains("До свидания") -> ()
+    | _ -> loop newState
 
-    loop initialState
+
+loop initialState
