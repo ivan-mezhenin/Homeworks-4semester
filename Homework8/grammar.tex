@@ -1,0 +1,58 @@
+\documentclass{article}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath}
+
+\begin{document}
+
+\section{Синтаксис грамматики}
+
+\begin{align*}
+    \langle Program \rangle &::= \langle DefList \rangle \ \langle Expr \rangle \\
+    \langle DefList \rangle &::= \langle Def \rangle \ \langle DefList \rangle \mid \langle Def \rangle \\
+    \langle Def \rangle     &::= \texttt{let} \ \langle Var \rangle \ \texttt{=} \ \langle Expr \rangle \\
+    \langle Expr \rangle    &::= \texttt{\textbackslash} \ \langle Vars \rangle \ \texttt{.} \ \langle Expr \rangle \mid \langle Apply \rangle \\
+    \langle Vars \rangle    &::= \langle Var \rangle \ \langle Vars \rangle \mid \langle Var \rangle \\
+    \langle Apply \rangle   &::= \langle Atom \rangle \ \langle Args \rangle \mid \langle Atom \rangle \\
+    \langle Args \rangle    &::= \langle Atom \rangle \ \langle Args \rangle \mid \langle Atom \rangle \\
+    \langle Atom \rangle    &::= \langle Var \rangle \mid \texttt{(} \ \langle Expr \rangle \texttt{)}
+\end{align*}
+
+
+Имя переменной $\langle Var \rangle$ определяется как последовательность символов, удовлетворяющая следующим правилам:
+\begin{enumerate}
+    \item Переменная должна состоять из латинских букв (в любом регистре) и/или цифр
+    \item Ключевое слово \texttt{let} зарезервировано и не может быть использовано в качестве имени переменной.
+\end{enumerate}
+
+\section{Примеры вывода}
+
+\subsection{Пример 1: Лямбда-абстракция \texttt{\textbackslash x y. x}}
+\begin{itemize}
+    \item $\langle Expr \rangle \Rightarrow \texttt{\textbackslash} \ \langle Vars \rangle \ \texttt{.} \ \langle Expr \rangle$
+    \item $\Rightarrow \texttt{\textbackslash} \ \langle Var \rangle \ \langle Vars \rangle \ \texttt{.} \ \langle Expr \rangle$
+    \item $\Rightarrow \texttt{\textbackslash} \ \texttt{x} \ \langle Vars \rangle \ \texttt{.} \ \langle Expr \rangle$
+    \item $\Rightarrow \texttt{\textbackslash} \ \texttt{x} \ \langle Var \rangle \ \texttt{.} \ \langle Expr \rangle$
+    \item $\Rightarrow \texttt{\textbackslash} \ \texttt{x} \ \texttt{y} \ \texttt{.} \ \langle Expr \rangle$
+    \item $\Rightarrow \texttt{\textbackslash} \ \texttt{x} \ \texttt{y} \ \texttt{.} \ \langle Apply \rangle$
+    \item $\Rightarrow \texttt{\textbackslash} \ \texttt{x} \ \texttt{y} \ \texttt{.} \ \langle Atom \rangle$
+    \item $\Rightarrow \texttt{\textbackslash} \ \texttt{x} \ \texttt{y} \ \texttt{.} \ \langle Var \rangle$
+    \item $\Rightarrow \texttt{\textbackslash} \ \texttt{x} \ \texttt{y} \ \texttt{.} \ \texttt{x}$
+\end{itemize}
+
+\subsection{Пример 2: Аппликация \texttt{S K K}}
+\begin{itemize}
+    \item $\langle Expr \rangle \Rightarrow \langle Apply \rangle$
+    \item $\Rightarrow \langle Atom \rangle \ \langle Args \rangle$
+    \item $\Rightarrow \langle Var \rangle \ \langle Args \rangle$
+    \item $\Rightarrow \texttt{S} \ \langle Args \rangle$
+    \item $\Rightarrow \texttt{S} \ \langle Atom \rangle \ \langle Args \rangle$
+    \item $\Rightarrow \texttt{S} \ \langle Var \rangle \ \langle Args \rangle$
+    \item $\Rightarrow \texttt{S} \ \texttt{K} \ \langle Args \rangle$
+    \item $\Rightarrow \texttt{S} \ \texttt{K} \ \langle Atom \rangle$
+    \item $\Rightarrow \texttt{S} \ \texttt{K} \ \langle Var \rangle$
+    \item $\Rightarrow \texttt{S} \ \texttt{K} \ \texttt{K}$
+\end{itemize}
+
+\end{document}
