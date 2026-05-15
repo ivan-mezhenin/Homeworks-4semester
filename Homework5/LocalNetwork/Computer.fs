@@ -5,32 +5,41 @@ open System
 type IRandom =
     abstract member NextDouble : unit -> float
 
-type OS =
-    | Windows
-    | Linux
-    | MacOS
+type IOS =
+    abstract InfectionProbability: float
 
-    member this.InfectionProbability =
-        match this with
-        | Windows -> 0.85
-        | Linux   -> 0.30
-        | MacOS   -> 0.15
+type Windows() =
+    interface IOS with
+        member _.InfectionProbability = 0.85
 
-type Computer(id: int, os: OS) =
-    member val Id = id with get
-    member val OS = os with get
-    member val IsInfected = false with get, set
-    member val Neighbors: int list = [] with get, set 
+type Linux() =
+    interface IOS with
+        member _.InfectionProbability = 0.30
 
-    member val private RandomProvider: IRandom = 
-        { new IRandom with member _.NextDouble() = Random.Shared.NextDouble() } 
+type MacOS() =
+    interface IOS with
+        member _.InfectionProbability = 0.15
+
+type Computer(id: int, os: IOS, infected: bool) =
+    member val Id = id
+    member val OS = os
+    member val IsInfected = infected with get, set
+    new(id: int, os: IOS) = Computer(id, os, false)
+
+    member val private RandomProvider: IRandom =
+        let rng = Random()
+        { new IRandom with member _.NextDouble() = rng.NextDouble() }
         with get, set
 
     member this.SetRandomProvider (provider: IRandom) =
         this.RandomProvider <- provider
 
-    member this.ShouldBeInfected() : float =
-        this.RandomProvider.NextDouble()
+    member this.TryInfect() : bool =
+        if this.RandomProvider.NextDouble() < this.OS.InfectionProbability then
+            this.IsInfected <- true
+            true
+        else
+            false
 
     member this.Infect() =
         this.IsInfected <- true

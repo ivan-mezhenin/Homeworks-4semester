@@ -13,11 +13,11 @@ type MockRandom(fixedProbability: float) =
 let ``Virus with probability 1.0 spreads like BFS`` () =
     let net = Network()
 
-    let c1 = Computer(1, Windows)
-    let c2 = Computer(2, Linux)
-    let c3 = Computer(3, Windows)
-    let c4 = Computer(4, MacOS)
-    let c5 = Computer(5, Linux)
+    let c1 = Computer(1, Windows())
+    let c2 = Computer(2, Linux())
+    let c3 = Computer(3, Windows())
+    let c4 = Computer(4, MacOS())
+    let c5 = Computer(5, Linux())
 
     net.AddComputer c1
     net.AddComputer c2
@@ -32,7 +32,7 @@ let ``Virus with probability 1.0 spreads like BFS`` () =
 
     c1.Infect()
 
-    let mock = MockRandom(1.0)
+    let mock = MockRandom(0.0)
     [c1; c2; c3; c4; c5] |> List.iter (fun c -> c.SetRandomProvider mock)
 
     net.Tick()
@@ -50,9 +50,9 @@ let ``Virus with probability 1.0 spreads like BFS`` () =
 let ``Virus with probability 0.0 infects only initial computer`` () =
     let net = Network()
 
-    let c1 = Computer(1, Windows)
-    let c2 = Computer(2, Linux)
-    let c3 = Computer(3, MacOS)
+    let c1 = Computer(1, Windows())
+    let c2 = Computer(2, Linux())
+    let c3 = Computer(3, MacOS())
 
     net.AddComputer c1
     net.AddComputer c2
@@ -63,7 +63,7 @@ let ``Virus with probability 0.0 infects only initial computer`` () =
 
     c1.Infect()
 
-    let mock = MockRandom(0.0)
+    let mock = MockRandom(1.0)
     [c1; c2; c3] |> List.iter (fun c -> c.SetRandomProvider mock)
 
     net.Tick()
@@ -78,9 +78,9 @@ let ``Virus with probability 0.0 infects only initial computer`` () =
 let ``Partial probability infects only some neighbors`` () =
     let net = Network()
 
-    let c1 = Computer(1, Windows)
-    let c2 = Computer(2, Linux)
-    let c3 = Computer(3, MacOS)
+    let c1 = Computer(1, Windows())
+    let c2 = Computer(2, Linux())
+    let c3 = Computer(3, MacOS())
 
     net.AddComputer c1
     net.AddComputer c2
@@ -91,8 +91,8 @@ let ``Partial probability infects only some neighbors`` () =
 
     c1.Infect()
 
-    c2.SetRandomProvider (MockRandom(1.0))
-    c3.SetRandomProvider (MockRandom(0.0))
+    c2.SetRandomProvider (MockRandom(0.0))
+    c3.SetRandomProvider (MockRandom(1.0))
 
     net.Tick()
 
@@ -104,10 +104,10 @@ let ``Partial probability infects only some neighbors`` () =
 let ``Multiple steps with mixed probabilities`` () =
     let net = Network()
 
-    let c1 = Computer(1, Windows)
-    let c2 = Computer(2, Linux)
-    let c3 = Computer(3, Windows)
-    let c4 = Computer(4, MacOS)
+    let c1 = Computer(1, Windows())
+    let c2 = Computer(2, Linux())
+    let c3 = Computer(3, Windows())
+    let c4 = Computer(4, MacOS())
 
     net.AddComputer c1
     net.AddComputer c2
@@ -120,9 +120,9 @@ let ``Multiple steps with mixed probabilities`` () =
 
     c1.Infect()
 
-    c2.SetRandomProvider (MockRandom(1.0))
+    c2.SetRandomProvider (MockRandom(0.0))
     c3.SetRandomProvider (MockRandom(0.5))
-    c4.SetRandomProvider (MockRandom(0.0))
+    c4.SetRandomProvider (MockRandom(1.0))
 
     net.Tick()
     net.Tick()
@@ -134,7 +134,7 @@ let ``Multiple steps with mixed probabilities`` () =
 [<Test>]
 let ``Clear infection state works between tests`` () =
     let net = Network()
-    let c1 = Computer(1, Windows)
+    let c1 = Computer(1, Windows())
     net.AddComputer c1
 
     c1.Infect()
